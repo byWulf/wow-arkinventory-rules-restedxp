@@ -1,9 +1,11 @@
-## Interface: 11509, 16001
+## Interface: 16001
 ## Title: ArkInventory [Rules] RestedXP
 ## Notes: Rule function rxpitem() for ArkInventory: items used by the remaining steps of the current RestedXP guide
 ## Notes-deDE: Regelfunktion rxpitem() für ArkInventory: Items, die in den noch kommenden Schritten des aktuellen RestedXP-Guides vorkommen
 ## Author: byWulf
-## Version: 1.0
+## Version: 1.0.0
+## X-License: MIT
+## X-Curse-Project-ID: 1787600
 ## IconTexture: Interface\Icons\INV_Misc_Book_09
 ## RequiredDeps: ArkInventoryRules
 ## OptionalDeps: RXPGuides

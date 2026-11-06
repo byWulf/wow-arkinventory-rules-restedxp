@@ -8,7 +8,7 @@ All documentation in this repository (README, AGENTS.md, code comments, commit m
 
 WoW addon `ArkInventoryRules_RestedXP`: registers the ArkInventory rule function `rxpitem()`, which matches items used by the remaining steps of the current RestedXP guide.
 
-- `ArkInventoryRules_RestedXP.toc`: addon manifest, interface `11509` (Classic Era) and `16001` (Classic Forever)
+- `ArkInventoryRules_RestedXP.toc`: addon manifest, interface `16001` (WoW Forever only, Classic Era is not supported)
 - `ArkInventoryRules_RestedXP.lua`: reads the parsed guide from RestedXP's global `RXP` (`RXP.currentGuide.steps[i].elements`, each element has a `tag` such as `collect` or `use`), the current step from `RXPCData.currentStep` and skipped steps from `RXPCData.stepSkip`. Elements of earlier steps still count when their quest (`element.questId`, or `element.quests` for `questitemcount`) is in the quest log (`C_QuestLog.IsOnQuest`). A 2 second ticker plus the quest events `QUEST_ACCEPTED`, `QUEST_TURNED_IN` and `QUEST_REMOVED` trigger a recalculation; ArkInventory's rule cache is only cleared when the item list changed.
 - `README.md`: user documentation, keep it in sync with the rule function and the list of guide commands
 

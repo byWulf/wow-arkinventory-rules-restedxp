@@ -10,10 +10,9 @@ Typical use: a **"Guide items"** bar that holds everything the guide will still 
 
 | Version | Interface |
 |---|---|
-| WoW Classic Era | 11509 |
-| WoW Classic Forever | 16001 |
+| WoW Forever | 16001 |
 
-Written for Forever. Other versions are untested. If ArkInventory and RestedXP provide the same data there, adding the interface number to the `.toc` is usually enough.
+Classic Era and other versions are not supported.
 
 ## Requirements
 
@@ -22,14 +21,16 @@ Written for Forever. Other versions are untested. If ArkInventory and RestedXP p
 
 ## Installation
 
-The folder in your AddOns directory **must** be named `ArkInventoryRules_RestedXP`, otherwise WoW will not load the addon:
+Install it from [CurseForge](https://www.curseforge.com/wow/addons/arkinventory-rules-restedxp), e.g. with the CurseForge app.
+
+For a manual installation, note that the folder in your AddOns directory **must** be named `ArkInventoryRules_RestedXP`, otherwise WoW will not load the addon:
 
 ```bash
 cd "C:/Program Files (x86)/World of Warcraft/_forever_/Interface/AddOns"
 git clone https://github.com/byWulf/wow-arkinventory-rules-restedxp.git ArkInventoryRules_RestedXP
 ```
 
-For Classic Era, use `_classic_era_/Interface/AddOns` instead. Alternatively, download the repository as a ZIP and extract its contents to `Interface/AddOns/ArkInventoryRules_RestedXP/`.
+Alternatively, download the ZIP from the [releases](https://github.com/byWulf/wow-arkinventory-rules-restedxp/releases) and extract it into `Interface/AddOns`.
 
 Then `/reload` in game.
 
@@ -95,3 +96,7 @@ rxpitem() and not rxpitem("collect")
 - **Rules beat built-in categories.** A matching rule always wins over default categories. A rule's priority only matters against other rules.
 - **Manual assignments beat rules.** An item you assigned to a category by hand stays there.
 - Without RestedXP loaded, or without a guide, `rxpitem()` never matches. No errors are raised.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
