@@ -46,6 +46,8 @@ Steps that count:
 - earlier steps that are still active (sticky steps),
 - except steps you skipped.
 
+Items from steps already behind you (finished or skipped) still count for `collect`, `collectmultiple` and `questitemcount` while the quest they belong to is in your quest log. The turn-in step only names the quest, not the items it needs, so without this the items would drop out as soon as you finish collecting them.
+
 Guide commands that count, and the name to pass to `rxpitem(...)` to filter by them:
 
 | Command | Meaning |
@@ -88,8 +90,8 @@ rxpitem() and not rxpitem("collect")
 ## Good to know
 
 - **Only the loaded guide counts.** Items that only the next guide needs show up once that guide is loaded.
-- **Collected items stay in.** A `collect` step you already finished still counts until you move past it, because you usually need the items for the turn-in.
-- **Refresh.** ArkInventory caches rule results. The plugin checks every 2 seconds whether the guide or the current step changed, and only when the resulting item list changed it clears the cache and redraws the bags.
+- **Collected items stay in until the turn-in.** Quest items keep counting after you move past the `collect` step, as long as the quest is in your quest log. Items without a quest (e.g. a plain `collect` for a profession) drop out once their step is behind you.
+- **Refresh.** ArkInventory caches rule results. The plugin checks every 2 seconds whether the guide or the current step changed, and also reacts to accepting, turning in or abandoning quests. Only when the resulting item list changed it clears the cache and redraws the bags.
 - **Rules beat built-in categories.** A matching rule always wins over default categories. A rule's priority only matters against other rules.
 - **Manual assignments beat rules.** An item you assigned to a category by hand stays there.
 - Without RestedXP loaded, or without a guide, `rxpitem()` never matches. No errors are raised.

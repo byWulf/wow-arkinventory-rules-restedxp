@@ -30,6 +30,32 @@ local READERS = {
 	end,
 }
 
+local function QuestOpen( questId )
+	questId = tonumber( questId )
+	if not questId or questId <= 0 then return false end
+	if C_QuestLog and C_QuestLog.IsOnQuest then
+		return C_QuestLog.IsOnQuest( questId ) == true
+	end
+	if GetQuestLogIndexByID then
+		return ( GetQuestLogIndexByID( questId ) or 0 ) > 0
+	end
+	return false
+end
+
+-- Items from steps already behind you still count while their quest is in the quest log,
+-- because the turn-in step only names the quest, not the items it needs.
+local function collectQuestOpen( e ) return QuestOpen( e.questId ) end
+local STILL_NEEDED = {
+	collect = collectQuestOpen,
+	collectmultiple = collectQuestOpen,
+	questitemcount = function( e )
+		for _, questId in ipairs( e.quests or { } ) do
+			if QuestOpen( questId ) then return true end
+		end
+		return false
+	end,
+}
+
 -- per command: { [itemID] = true }; all = union of every command
 local guideItems = { all = { } }
 local guideKey
@@ -52,10 +78,12 @@ local function Collect( )
 
 	for index, step in ipairs( guide.steps ) do
 		-- the current and all following steps, plus earlier steps that are still active (sticky)
-		if ( index >= current or step.active ) and not skipped[index] and type( step.elements ) == "table" then
+		local upcoming = ( index >= current or step.active ) and not skipped[index]
+		if type( step.elements ) == "table" then
 			for _, element in ipairs( step.elements ) do
 				local read = READERS[element.tag]
-				if read then
+				local stillNeeded = STILL_NEEDED[element.tag]
+				if read and ( upcoming or ( stillNeeded and stillNeeded( element ) ) ) then
 					local set = items[element.tag] or { }
 					items[element.tag] = set
 					read( element, set )
@@ -141,5 +169,11 @@ function rule:OnEnable( )
 		hooked = true
 		C_Timer.NewTicker( 2, CheckState )
 		CheckState( )
+		-- accepting, turning in or abandoning a quest changes which earlier items still count
+		local f = CreateFrame( "Frame" )
+		for _, event in ipairs( { "QUEST_ACCEPTED", "QUEST_TURNED_IN", "QUEST_REMOVED" } ) do
+			pcall( f.RegisterEvent, f, event )
+		end
+		f:SetScript( "OnEvent", Refresh )
 	end
 end
