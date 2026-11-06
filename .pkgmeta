@@ -1,0 +1,5 @@
+package-as: ArkInventoryRules_RestedXP
+
+ignore:
+  - AGENTS.md
+  - CLAUDE.md
