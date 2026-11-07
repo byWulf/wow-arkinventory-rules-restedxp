@@ -28,7 +28,14 @@ local READERS = {
 	bankdeposit = function( e, set )
 		for _, v in ipairs( e.items or { } ) do addId( set, v ) end
 	end,
+	bankwithdraw = function( e, set )
+		for _, v in ipairs( e.items or { } ) do addId( set, v ) end
+	end,
 }
+
+-- How many guides after the loaded one count as well. Guides often only say "keep these, you need
+-- them later" in the step text, and the matching collect command is in the next guide.
+local NEXT_GUIDES = 1
 
 local function QuestOpen( questId )
 	questId = tonumber( questId )
@@ -68,6 +75,56 @@ local function RXPData( )
 	return rxp.currentGuide
 end
 
+-- The guide named by #next, parsed and filtered for this character like RestedXP does when it loads it.
+-- #next may list several guides separated by ";", each optionally prefixed with "<group>\";
+-- RestedXP takes the first one that is active for the character, else the last one.
+-- RXP.functions.next is not called on purpose: in some cases it loads the guide instead of returning it.
+local nextGuideCache = { }
+local function NextGuide( guide )
+	local rxp = _G.RXP
+	if type( guide.next ) ~= "string" or type( rxp.GetGuideTable ) ~= "function" or type( rxp.FetchGuide ) ~= "function" or type( rxp.ProcessGuideTable ) ~= "function" then
+		return nil
+	end
+
+	local found
+	for entry in string.gmatch( guide.next, "[^;]+" ) do
+		local group, name = string.match( entry, "^%s*(.-)%s*\\%s*(.-)%s*$" )
+		if not group then
+			group, name = guide.group, string.trim( entry )
+		end
+		local ok, candidate = pcall( rxp.GetGuideTable, group, name )
+		if ok and type( candidate ) == "table" then
+			found = candidate
+			local okActive, active = pcall( rxp.IsGuideActive or function( ) return true end, candidate )
+			if okActive and active then break end
+		end
+	end
+	if not found then return nil end
+
+	local key = tostring( found.group ) .. "|" .. tostring( found.name )
+	if nextGuideCache[key] == nil then
+		local ok, processed = pcall( function( )
+			local fetched = rxp:FetchGuide( found.group, found.name )
+			return fetched and fetched.steps and rxp.ProcessGuideTable( fetched )
+		end )
+		nextGuideCache[key] = ok and type( processed ) == "table" and type( processed.steps ) == "table" and processed or false
+	end
+	return nextGuideCache[key] or nil
+end
+
+local function ReadStep( items, step, upcoming )
+	if type( step.elements ) ~= "table" then return end
+	for _, element in ipairs( step.elements ) do
+		local read = READERS[element.tag]
+		local stillNeeded = STILL_NEEDED[element.tag]
+		if read and ( upcoming or ( stillNeeded and stillNeeded( element ) ) ) then
+			local set = items[element.tag] or { }
+			items[element.tag] = set
+			read( element, set )
+		end
+	end
+end
+
 local function Collect( )
 	local items = { all = { } }
 	local guide = RXPData( )
@@ -78,17 +135,18 @@ local function Collect( )
 
 	for index, step in ipairs( guide.steps ) do
 		-- the current and all following steps, plus earlier steps that are still active (sticky)
-		local upcoming = ( index >= current or step.active ) and not skipped[index]
-		if type( step.elements ) == "table" then
-			for _, element in ipairs( step.elements ) do
-				local read = READERS[element.tag]
-				local stillNeeded = STILL_NEEDED[element.tag]
-				if read and ( upcoming or ( stillNeeded and stillNeeded( element ) ) ) then
-					local set = items[element.tag] or { }
-					items[element.tag] = set
-					read( element, set )
-				end
-			end
+		ReadStep( items, step, ( index >= current or step.active ) and not skipped[index] )
+	end
+
+	-- every step of the following guides
+	local guideNames = { tostring( guide.group ) .. "|" .. tostring( guide.name ) }
+	local nextGuide = guide
+	for _ = 1, NEXT_GUIDES do
+		nextGuide = NextGuide( nextGuide )
+		if not nextGuide then break end
+		guideNames[#guideNames + 1] = tostring( nextGuide.name )
+		for _, step in ipairs( nextGuide.steps ) do
+			ReadStep( items, step, true )
 		end
 	end
 
@@ -102,7 +160,7 @@ local function Collect( )
 	local ids = { }
 	for id in pairs( items.all ) do ids[#ids + 1] = id end
 	table.sort( ids )
-	return items, tostring( guide.group ) .. "|" .. tostring( guide.name ) .. "|" .. table.concat( ids, "," )
+	return items, table.concat( guideNames, "|" ) .. "|" .. table.concat( ids, "," )
 end
 
 local function ItemID( )
