@@ -49,6 +49,16 @@ local function QuestOpen( questId )
 	return false
 end
 
+local function QuestTurnedIn( questId )
+	if C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
+		return C_QuestLog.IsQuestFlaggedCompleted( questId ) == true
+	end
+	if IsQuestFlaggedCompleted then
+		return IsQuestFlaggedCompleted( questId ) == true
+	end
+	return false
+end
+
 -- Items from steps already behind you still count while their quest is in the quest log,
 -- because the turn-in step only names the quest, not the items it needs.
 local function collectQuestOpen( e ) return QuestOpen( e.questId ) end
@@ -125,6 +135,35 @@ local function ReadStep( items, step, upcoming )
 	end
 end
 
+-- Items you were told to get for a quest you haven't turned in yet, e.g. bought at the auction house
+-- for a quest that is only accepted a few guides later. Saved per character, because the guide with
+-- the collect step is long gone by then: { [questID] = { [itemID] = tag } }
+local function PendingQuests( )
+	local db = _G.ArkInventoryRules_RestedXPCharDB
+	if type( db ) ~= "table" then
+		db = { }
+		_G.ArkInventoryRules_RestedXPCharDB = db
+	end
+	if type( db.pendingQuests ) ~= "table" then
+		db.pendingQuests = { }
+	end
+	return db.pendingQuests
+end
+
+local function RememberPending( step )
+	if type( step.elements ) ~= "table" then return end
+	local pending = PendingQuests( )
+	for _, element in ipairs( step.elements ) do
+		local questId = tonumber( element.questId )
+		if STILL_NEEDED[element.tag] == collectQuestOpen and questId and questId > 0 and not QuestTurnedIn( questId ) then
+			local set = { }
+			READERS[element.tag]( element, set )
+			pending[questId] = pending[questId] or { }
+			for id in pairs( set ) do pending[questId][id] = element.tag end
+		end
+	end
+end
+
 local function Collect( )
 	local items = { all = { } }
 	local guide = RXPData( )
@@ -135,7 +174,24 @@ local function Collect( )
 
 	for index, step in ipairs( guide.steps ) do
 		-- the current and all following steps, plus earlier steps that are still active (sticky)
-		ReadStep( items, step, ( index >= current or step.active ) and not skipped[index] )
+		local upcoming = ( index >= current or step.active ) and not skipped[index]
+		ReadStep( items, step, upcoming )
+		if not upcoming and not skipped[index] then
+			RememberPending( step )
+		end
+	end
+
+	-- remembered items until their quest is turned in
+	local pending = PendingQuests( )
+	for questId, pendingItems in pairs( pending ) do
+		if QuestTurnedIn( questId ) then
+			pending[questId] = nil
+		else
+			for id, tag in pairs( pendingItems ) do
+				items[tag] = items[tag] or { }
+				items[tag][id] = true
+			end
+		end
 	end
 
 	-- every step of the following guides

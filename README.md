@@ -50,6 +50,8 @@ Steps that count:
 
 Items from steps already behind you (finished or skipped) still count for `collect`, `collectmultiple` and `questitemcount` while the quest they belong to is in your quest log. The turn-in step only names the quest, not the items it needs, so without this the items would drop out as soon as you finish collecting them.
 
+Items from a finished (not skipped) `collect` or `collectmultiple` step that names a quest are also remembered per character until that quest is turned in, even after you moved on to other guides. Typical case: the guide tells you to buy something at the auction house for a quest you only accept a few guides later.
+
 Guide commands that count, and the name to pass to `rxpitem(...)` to filter by them:
 
 | Command | Meaning |
@@ -92,7 +94,7 @@ rxpitem() and not rxpitem("collect")
 ## Good to know
 
 - **The next guide counts too.** Guides often say "keep these, you will need them later" only in the step text, while the matching `collect` is in the next guide (e.g. Murloc Fins in the Wetlands guide for a Redridge quest). So all steps of the guide after the loaded one count as well. Guides further ahead don't.
-- **Collected items stay in until the turn-in.** Quest items keep counting after you move past the `collect` step, as long as the quest is in your quest log. Items without a quest (e.g. a plain `collect` for a profession) drop out once their step is behind you.
+- **Collected items stay in until the turn-in.** Quest items keep counting after you move past the `collect` step until the quest is turned in, also across guides (saved per character in `ArkInventoryRules_RestedXPCharDB`). Items without a quest (e.g. a plain `collect` for a profession) drop out once their step is behind you.
 - **Refresh.** ArkInventory caches rule results. The plugin checks every 2 seconds whether the guide or the current step changed, and also reacts to accepting, turning in or abandoning quests. Only when the resulting item list changed it clears the cache and redraws the bags.
 - **Rules beat built-in categories.** A matching rule always wins over default categories. A rule's priority only matters against other rules.
 - **Manual assignments beat rules.** An item you assigned to a category by hand stays there.

@@ -9,5 +9,6 @@
 ## IconTexture: Interface\Icons\INV_Misc_Book_09
 ## RequiredDeps: ArkInventoryRules
 ## OptionalDeps: RXPGuides
+## SavedVariablesPerCharacter: ArkInventoryRules_RestedXPCharDB
 
 ArkInventoryRules_RestedXP.lua
